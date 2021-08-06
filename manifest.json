@@ -1,0 +1,26 @@
+{
+  "manifest_version": 2,
+  "name": "4chanMediaDownloader",
+  "description": "Add a download button for each media in a thread. Can bulk download all media at once.",
+  "version": "1.0.0",
+  "icons": {
+    "64": "icons/icon.png"
+  },
+  "background": {
+    "scripts": [
+      "background_script.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://boards.4chan.org/*",
+        "*://boards.4channel.org/*"
+      ],
+      "js": [
+        "content_script.js"
+      ]
+    }
+  ],
+  "permissions": ["downloads", "downloads.open"]
+}
