@@ -1,10 +1,19 @@
-// Put all the javascript code here, that you want to execute in background.
-// background-script.js
+function sanitizeInput(input) {
+    return input.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+}
+
+function sanitizeMessage(message) {
+    return {
+        url: sanitizeInput(message.url),
+        filename: sanitizeInput(message.filename),
+    };
+}
 
 const downloads = {};
 
 function connected(channel) {
     channel.onMessage.addListener(function (message) {
+        message = sanitizeMessage(message);
         browser.downloads
             .download({
                 url: message.url,
@@ -22,7 +31,7 @@ function connected(channel) {
 }
 
 function onDownloadChange(downloadItem) {
-    if (downloadItem.state !== undefined && downloadItem.state !== null) return;
+    if (downloadItem.state === undefined || downloadItem.state === null) return;
 
     downloads[downloadItem.id].channel.postMessage({
         event: "downloadChanged",
