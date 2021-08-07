@@ -74,5 +74,3 @@ downloadAllButton.type = "button";
 downloadAllButton.onclick = () => downloadAll();
 
 document.querySelector(".file").firstChild.appendChild(downloadAllButton);
-
-//const urls = Array.from(document.querySelectorAll(".file > .fileThumb").values()).map((v) => v.href);
