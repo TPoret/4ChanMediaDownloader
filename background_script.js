@@ -9,11 +9,18 @@ function sanitizeMessage(message) {
     };
 }
 
+function is4chanCdnUrl(url) {
+    return url.match(/(https\:){0,1}\/\/i\.4cdn\.org\/.+\/.+/g) !== null;
+}
+
 const downloads = {};
 
 function connected(channel) {
     channel.onMessage.addListener(function (message) {
         message = sanitizeMessage(message);
+
+        if (!is4chanCdnUrl(message.url)) return;
+
         browser.downloads
             .download({
                 url: message.url,
