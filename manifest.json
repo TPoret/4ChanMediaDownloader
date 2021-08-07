@@ -22,5 +22,6 @@
       ]
     }
   ],
-  "permissions": ["downloads", "downloads.open"]
+  "permissions": ["downloads", "downloads.open"],
+  "content_security_policy": "default-src 'self'"
 }
