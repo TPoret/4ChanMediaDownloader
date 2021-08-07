@@ -10,7 +10,7 @@ function sanitizeMessage(message) {
 }
 
 function is4chanCdnUrl(url) {
-    return url.match(/(https\:){0,1}\/\/i\.4cdn\.org\/.+\/.+/g) !== null;
+    return url.match(/(https:){0,1}\/\/i\.4cdn\.org\/.+\/.+/g) !== null;
 }
 
 const downloads = {};
