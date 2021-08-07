@@ -1,3 +1,4 @@
+[![CodeFactor](https://www.codefactor.io/repository/github/tporet/4chanmediadownloader/badge)](https://www.codefactor.io/repository/github/tporet/4chanmediadownloader)
 [![Maintainability](https://api.codeclimate.com/v1/badges/10f5550d1e82e20ef325/maintainability)](https://codeclimate.com/github/TPoret/4ChanMediaDownloader/maintainability)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=TPoret_4ChanMediaDownloader&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=TPoret_4ChanMediaDownloader)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=TPoret_4ChanMediaDownloader&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=TPoret_4ChanMediaDownloader)
