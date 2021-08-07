@@ -22,7 +22,7 @@ function connected(channel) {
 }
 
 function onDownloadChange(downloadItem) {
-    if (!!!downloadItem.state) return;
+    if (!downloadItem.state) return;
 
     downloads[downloadItem.id].channel.postMessage({
         event: "downloadChanged",
