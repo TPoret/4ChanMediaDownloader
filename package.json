@@ -6,8 +6,7 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "build:development": "esbuild content_script.js --bundle --sourcemap --outfile=content.js",
-    "build:production": "esbuild content_script.js --bundle --outfile=content.js"
+    "build": "esbuild src/content_script.js --bundle --outfile=content.js && esbuild src/background_script.js --bundle --outfile=background.js"
   },
   "jest": {
     "transform": {
