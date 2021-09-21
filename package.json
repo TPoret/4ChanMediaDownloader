@@ -6,7 +6,7 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "build": "esbuild src/content_script.js --bundle --outfile=content.js && esbuild src/background_script.js --bundle --outfile=background.js"
+    "build": "esbuild src/content_script.js --target=firefox57 --bundle --outfile=content.js && esbuild src/background_script.js --target=firefox57 --bundle --outfile=background.js"
   },
   "jest": {
     "transform": {
