@@ -40,7 +40,7 @@ channel.onMessage.addListener(function (message) {
 function downloadAll() {
   document.querySelectorAll(".file > .fileThumb").forEach((fileThumb) => {
     const element = fileThumb.parentElement.querySelector(".fileText > a");
-    const filename = element.title || element.textContent;
+    const filename = element.title || element.parentElement.title || element.textContent;
 
     initiateDownload(fileThumb.href, filename);
   });
@@ -49,7 +49,7 @@ function downloadAll() {
 function addDownloadButtons() {
   document.querySelectorAll(".file > .fileThumb").forEach((fileThumb) => {
     const element = fileThumb.parentElement.querySelector(".fileText > a");
-    const filename = element.title || element.textContent;
+    const filename = element.title || element.parentElement.title || element.textContent;
 
     const downloadButton = document.createElement("button");
 
