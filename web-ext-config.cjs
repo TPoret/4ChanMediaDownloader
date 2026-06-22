@@ -11,6 +11,7 @@ module.exports = {
     '.superpowers',
     '.git',
     'babel.config.js',
+    'babel.config.cjs',
     'yarn.lock',
     'package.json',
     'LICENSE',
@@ -19,6 +20,7 @@ module.exports = {
     'firefox-screenshot*.png',
     'diag-*',
     '*.cjs',
-    'web-ext-config.js',
+    'web-ext-config.cjs',
+    'web-ext-config.mjs',
   ],
 };
