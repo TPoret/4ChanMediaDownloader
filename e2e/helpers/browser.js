@@ -1,55 +1,64 @@
-const { firefox } = require('@playwright/test');
+const { Builder } = require('selenium-webdriver');
+const firefox = require('selenium-webdriver/firefox');
+const os = require('os');
 const path = require('path');
 const fs = require('fs');
-const os = require('os');
 
-const EXT_ID = '4chan-media-downloader@tpt';
 const ROOT_DIR = path.join(__dirname, '..', '..');
 const DOWNLOADS_DIR = path.join(__dirname, '..', 'downloads');
+// Use the actual geckodriver binary (geckodriver npm pkg caches it in os.tmpdir())
+const GECKODRIVER = process.env.GECKODRIVER_PATH || path.join(os.tmpdir(), 'geckodriver');
+const FIREFOX_BIN = '/usr/bin/firefox';
 
-async function createBrowserContext() {
-  const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ff-4chan-'));
-  const extDir = path.join(profileDir, 'extensions', EXT_ID);
-  fs.mkdirSync(extDir, { recursive: true });
-  fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
+// Extension files to copy into a clean temp dir for installAddon
+const EXT_FILES = ['manifest.json', 'content.js', 'background.js'];
 
-  for (const file of ['manifest.json', 'content.js', 'background.js']) {
-    fs.copyFileSync(path.join(ROOT_DIR, file), path.join(extDir, file));
+function buildExtDir() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ext-4chan-'));
+  for (const f of EXT_FILES) {
+    fs.copyFileSync(path.join(ROOT_DIR, f), path.join(dir, f));
   }
-
   const iconsDir = path.join(ROOT_DIR, 'icons');
-  const extIconsDir = path.join(extDir, 'icons');
-  fs.mkdirSync(extIconsDir, { recursive: true });
+  const destIcons = path.join(dir, 'icons');
+  fs.mkdirSync(destIcons);
   for (const icon of fs.readdirSync(iconsDir)) {
-    fs.copyFileSync(path.join(iconsDir, icon), path.join(extIconsDir, icon));
+    fs.copyFileSync(path.join(iconsDir, icon), path.join(destIcons, icon));
   }
-
-  const context = await firefox.launchPersistentContext(profileDir, {
-    headless: false,
-    firefoxUserPrefs: {
-      'xpinstall.signatures.required': false,
-      'extensions.autoDisableScopes': 0,
-      'extensions.enabledScopes': 15,
-      'extensions.startupScanPolicy': 0,
-      'browser.download.folderList': 2,
-      'browser.download.dir': DOWNLOADS_DIR,
-      'browser.download.useDownloadDir': true,
-      'browser.helperApps.neverAsk.saveToDisk':
-        'image/jpeg,image/png,image/gif,video/webm,video/mp4,image/webp',
-      'browser.download.manager.showWhenStarting': false,
-      'browser.download.manager.focusWhenStarting': false,
-    },
-  });
-
-  async function cleanup() {
-    try {
-      await context.close();
-    } finally {
-      fs.rmSync(profileDir, { recursive: true, force: true });
-    }
-  }
-
-  return { context, cleanup };
+  return dir;
 }
 
-module.exports = { createBrowserContext, DOWNLOADS_DIR };
+async function createDriver(downloadsDir = DOWNLOADS_DIR) {
+  fs.mkdirSync(downloadsDir, { recursive: true });
+
+  const options = new firefox.Options();
+  options.setBinary(FIREFOX_BIN);
+  options.setPreference('xpinstall.signatures.required', false);
+  options.setPreference('browser.download.folderList', 2);
+  options.setPreference('browser.download.dir', downloadsDir);
+  options.setPreference('browser.download.useDownloadDir', true);
+  options.setPreference(
+    'browser.helperApps.neverAsk.saveToDisk',
+    'image/jpeg,image/png,image/gif,video/webm,video/mp4,image/webp'
+  );
+  options.setPreference('browser.download.manager.showWhenStarting', false);
+  options.setPreference('browser.download.manager.focusWhenStarting', false);
+
+  const service = new firefox.ServiceBuilder(GECKODRIVER);
+
+  const driver = await new Builder()
+    .forBrowser('firefox')
+    .setFirefoxOptions(options)
+    .setFirefoxService(service)
+    .build();
+
+  const extDir = buildExtDir();
+  try {
+    await driver.installAddon(extDir, true);
+  } finally {
+    fs.rmSync(extDir, { recursive: true, force: true });
+  }
+
+  return driver;
+}
+
+module.exports = { createDriver, DOWNLOADS_DIR, DEFAULT_DOWNLOADS_DIR: DOWNLOADS_DIR };

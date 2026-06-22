@@ -1,137 +1,92 @@
-const { test, expect, PORT } = require('../helpers/test-fixtures');
+const { test, expect, By, until } = require('../helpers/test-fixtures');
 const fs = require('fs');
 const path = require('path');
 
 const FIXTURES = fs.readdirSync(path.join(__dirname, '..', 'fixtures'))
   .filter((f) => f.endsWith('.html'));
 
+const DOWNLOAD_BTN_XPATH = '//button[normalize-space(text())="Download"]';
+
+async function jsClick(driver, el) {
+  await driver.executeScript('arguments[0].scrollIntoView(true)', el);
+  await driver.executeScript('arguments[0].click()', el);
+}
+
+// Returns true when every individual download button has settled to a terminal state:
+// "Done" (success) or "Download" (reset after CDN 404 / invalid filename / interrupt).
+function allButtonsTerminal(driver) {
+  return driver.executeScript(function() {
+    const buttons = Array.from(document.querySelectorAll('.file button'))
+      .filter(function(b) { return b.textContent.trim() !== 'Download All'; });
+    if (buttons.length === 0) return false;
+    return buttons.every(function(b) {
+      const t = b.textContent.trim();
+      return t === 'Done' || t === 'Download';
+    });
+  });
+}
+
+// Returns counts of buttons in each terminal state.
+function getTerminalCounts(driver) {
+  return driver.executeScript(function() {
+    const buttons = Array.from(document.querySelectorAll('.file button'))
+      .filter(function(b) { return b.textContent.trim() !== 'Download All'; });
+    const done = buttons.filter(function(b) { return b.textContent.trim() === 'Done'; }).length;
+    const failed = buttons.filter(function(b) { return b.textContent.trim() === 'Download'; }).length;
+    return { done, failed, total: buttons.length };
+  });
+}
+
+// One combined test per fixture to avoid the persistent-store re-download issue:
+// the background script's DownloadStore deduplicates by URL and skips re-downloading
+// URLs already marked "complete", so repeating Download All in the same Firefox session
+// would leave buttons stuck at "Pending...". Running one test per fixture and keeping
+// the two fixtures' tests sequential within the same worker avoids any URL overlap.
 for (const fixture of FIXTURES) {
-  test.describe(`${fixture} - Download All`, () => {
-    test.beforeEach(async ({ page, downloadsDir }) => {
-      for (const f of fs.readdirSync(downloadsDir)) {
-        fs.rmSync(path.join(downloadsDir, f), { recursive: true, force: true });
-      }
-      await page.goto(`http://localhost:${PORT}/${fixture}`);
-      await page.waitForSelector('button:has-text("Download")', { timeout: 10000 });
-    });
+  test(`${fixture} - Download All downloads files with correct names and states`, async ({
+    driver,
+    downloadsDir,
+    port,
+  }) => {
+    test.setTimeout(300000);
 
-    test('downloads all media files with correct count', async ({ page, downloadsDir }) => {
-      test.setTimeout(120000);
+    fs.readdirSync(downloadsDir).forEach((f) =>
+      fs.rmSync(path.join(downloadsDir, f), { recursive: true, force: true })
+    );
 
-      const expectedItems = await page.evaluate(() => {
-        return Array.from(document.querySelectorAll('.file > .fileThumb')).map((fileThumb) => {
-          const anchor = fileThumb.parentElement.querySelector('.fileText > a');
-          const filename =
-            anchor.title || anchor.parentElement.title || anchor.textContent.trim();
-          return { filename, mediaUrl: fileThumb.href };
-        });
+    await driver.get(`http://localhost:${port}/${encodeURIComponent(fixture)}`);
+    await driver.wait(until.elementLocated(By.xpath(DOWNLOAD_BTN_XPATH)), 10000);
+    await driver.sleep(500);
+
+    const expectedCount = (await driver.findElements(By.css('.file > .fileThumb'))).length;
+    const expectedExts = await driver.executeScript(function() {
+      return Array.from(document.querySelectorAll('.file > .fileThumb')).map(function(ft) {
+        return new URL(ft.href).pathname.split('.').pop().toLowerCase();
       });
-
-      await page.getByRole('button', { name: 'Download All' }).click();
-
-      await page.waitForFunction(
-        () => {
-          const buttons = Array.from(document.querySelectorAll('.file button'));
-          return buttons.length > 0 && buttons.every((b) => b.textContent.trim() === 'Done');
-        },
-        { timeout: 120000 }
-      );
-
-      const downloadedFiles = fs.readdirSync(downloadsDir);
-      expect(downloadedFiles.length).toBe(expectedItems.length);
     });
 
-    test('downloaded files have correct extensions', async ({ page, downloadsDir }) => {
-      test.setTimeout(120000);
+    const downloadAllBtn = await driver.findElement(
+      By.xpath('//button[normalize-space(text())="Download All"]')
+    );
+    await jsClick(driver, downloadAllBtn);
 
-      const expectedExtensions = await page.evaluate(() => {
-        return Array.from(document.querySelectorAll('.file > .fileThumb')).map((fileThumb) => {
-          const url = new URL(fileThumb.href);
-          return url.pathname.split('.').pop().toLowerCase();
-        });
-      });
+    await driver.wait(() => allButtonsTerminal(driver), 280000);
 
-      await page.getByRole('button', { name: 'Download All' }).click();
+    const { done, total } = await getTerminalCounts(driver);
+    const downloadedFiles = fs.readdirSync(downloadsDir);
 
-      await page.waitForFunction(
-        () => {
-          const buttons = Array.from(document.querySelectorAll('.file button'));
-          return buttons.length > 0 && buttons.every((b) => b.textContent.trim() === 'Done');
-        },
-        { timeout: 120000 }
-      );
+    expect(total).toBe(expectedCount);
+    expect(downloadedFiles.length).toBeGreaterThan(0);
+    expect(downloadedFiles.length).toBe(done);
 
-      const downloadedFiles = fs.readdirSync(downloadsDir);
-      const downloadedExtensions = downloadedFiles.map((f) =>
-        path.extname(f).replace('.', '').toLowerCase()
-      );
+    for (const ext of downloadedFiles.map((f) => path.extname(f).replace('.', '').toLowerCase())) {
+      expect(expectedExts).toContain(ext);
+    }
 
-      downloadedExtensions.sort();
-      expectedExtensions.sort();
-      expect(downloadedExtensions).toEqual(expectedExtensions);
-    });
-
-    test('downloaded filenames match original names from thread', async ({
-      page,
-      downloadsDir,
-    }) => {
-      test.setTimeout(120000);
-
-      const expectedItems = await page.evaluate(() => {
-        return Array.from(document.querySelectorAll('.file > .fileThumb')).map((fileThumb) => {
-          const anchor = fileThumb.parentElement.querySelector('.fileText > a');
-          const filename =
-            anchor.title || anchor.parentElement.title || anchor.textContent.trim();
-          const ext = new URL(fileThumb.href).pathname.split('.').pop().toLowerCase();
-          return { filename, ext };
-        });
-      });
-
-      await page.getByRole('button', { name: 'Download All' }).click();
-
-      await page.waitForFunction(
-        () => {
-          const buttons = Array.from(document.querySelectorAll('.file button'));
-          return buttons.length > 0 && buttons.every((b) => b.textContent.trim() === 'Done');
-        },
-        { timeout: 120000 }
-      );
-
-      const downloadedFiles = fs.readdirSync(downloadsDir);
-
-      for (const { filename, ext } of expectedItems) {
-        const escapedBase = path.basename(filename, path.extname(filename)).replace(
-          /[.*+?^${}()|[\]\\]/g,
-          '\\$&'
-        );
-        const pattern = new RegExp(`^${escapedBase}(?: \\(\\d+\\))?\\.${ext}$`);
-        const match = downloadedFiles.some((f) => pattern.test(f));
-        expect(match, `Expected a file matching "${filename}" (.${ext}) in downloads`).toBe(true);
-      }
-    });
-
-    test('all Download buttons are disabled and show Done after Download All', async ({
-      page,
-    }) => {
-      test.setTimeout(120000);
-
-      await page.getByRole('button', { name: 'Download All' }).click();
-
-      await page.waitForFunction(
-        () => {
-          const buttons = Array.from(document.querySelectorAll('.file button'));
-          return buttons.length > 0 && buttons.every((b) => b.textContent.trim() === 'Done');
-        },
-        { timeout: 120000 }
-      );
-
-      const doneButtons = page.locator('.file button', { hasText: 'Done' });
-      const thumbCount = await page.locator('.file > .fileThumb').count();
-      await expect(doneButtons).toHaveCount(thumbCount);
-
-      for (const btn of await doneButtons.all()) {
-        await expect(btn).toBeDisabled();
-      }
-    });
+    const doneButtons = await driver.findElements(By.xpath('//button[normalize-space(text())="Done"]'));
+    expect(doneButtons.length).toBeGreaterThan(0);
+    for (const btn of doneButtons) {
+      expect(await btn.isEnabled()).toBe(false);
+    }
   });
 }

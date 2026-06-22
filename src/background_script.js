@@ -28,8 +28,8 @@ autorun(() => {
             id => {
                 downloadStore.updateDownloadByUrl(nextDownload.url, {id, state: "in_progress"})
             },
-            id => {
-                downloadStore.updateDownloadByUrl(nextDownload.url, {id, state: "pending"})
+            _err => {
+                downloadStore.updateDownloadByUrl(nextDownload.url, {state: "interrupted"})
             }
         );
     }

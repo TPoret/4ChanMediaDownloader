@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 
 const FIXTURES_DIR = path.join(__dirname, '..', 'fixtures');
-const PORT = 3000;
 
 function startServer() {
   return new Promise((resolve, reject) => {
@@ -22,9 +21,13 @@ function startServer() {
       });
     });
 
-    server.listen(PORT, '127.0.0.1', () => resolve(server));
+    // Port 0 lets the OS pick a free port — avoids conflicts when running parallel workers
+    server.listen(0, '127.0.0.1', () => {
+      server.port = server.address().port;
+      resolve(server);
+    });
     server.on('error', reject);
   });
 }
 
-module.exports = { startServer, PORT };
+module.exports = { startServer };

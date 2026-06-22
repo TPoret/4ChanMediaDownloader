@@ -1,57 +1,69 @@
-const { test, expect, PORT } = require('../helpers/test-fixtures');
+const { test, expect, By, until } = require('../helpers/test-fixtures');
 const fs = require('fs');
 const path = require('path');
 
 const FIXTURES = fs.readdirSync(path.join(__dirname, '..', 'fixtures'))
   .filter((f) => f.endsWith('.html'));
 
+const DOWNLOAD_BTN_XPATH = '//button[normalize-space(text())="Download"]';
+
+async function jsClick(driver, el) {
+  await driver.executeScript('arguments[0].scrollIntoView(true)', el);
+  await driver.executeScript('arguments[0].click()', el);
+}
+
 for (const fixture of FIXTURES) {
   test.describe(fixture, () => {
-    test.beforeEach(async ({ page, downloadsDir }) => {
+    test.beforeEach(async ({ driver, downloadsDir, port }) => {
       for (const f of fs.readdirSync(downloadsDir)) {
         fs.rmSync(path.join(downloadsDir, f), { recursive: true, force: true });
       }
-      await page.goto(`http://localhost:${PORT}/${fixture}`);
-      await page.waitForSelector('button:has-text("Download")', { timeout: 10000 });
+      await driver.get(`http://localhost:${port}/${encodeURIComponent(fixture)}`);
+      await driver.wait(until.elementLocated(By.xpath(DOWNLOAD_BTN_XPATH)), 10000);
+      // Allow background script port to stabilize before tests start clicking
+      await driver.sleep(500);
     });
 
-    test('Download All button is present', async ({ page }) => {
-      await expect(page.getByRole('button', { name: 'Download All' })).toBeVisible();
+    test('Download All button is present', async ({ driver }) => {
+      // findElement throws NoSuchElementError if absent — that's the assertion
+      const btn = await driver.findElement(
+        By.xpath('//button[normalize-space(text())="Download All"]')
+      );
+      expect(btn).toBeTruthy();
     });
 
-    test('one Download button per media file', async ({ page }) => {
-      const thumbCount = await page.locator('.file > .fileThumb').count();
-      const downloadButtons = page.getByRole('button', { name: 'Download' });
-      await expect(downloadButtons).toHaveCount(thumbCount);
+    test('one Download button per media file', async ({ driver }) => {
+      const thumbCount = (await driver.findElements(By.css('.file > .fileThumb'))).length;
+      const downloadBtns = await driver.findElements(By.xpath(DOWNLOAD_BTN_XPATH));
+      expect(downloadBtns.length).toBe(thumbCount);
     });
 
     test('clicking Download downloads the file with correct name and extension', async ({
-      page,
+      driver,
       downloadsDir,
+      port,
     }) => {
-      const { filename, mediaUrl } = await page.evaluate(() => {
+      test.setTimeout(120000);
+
+      const { filename, mediaUrl } = await driver.executeScript(function() {
         const fileThumb = document.querySelector('.file > .fileThumb');
         const anchor = fileThumb.parentElement.querySelector('.fileText > a');
-        const filename =
-          anchor.title || anchor.parentElement.title || anchor.textContent.trim();
+        const filename = anchor.title || anchor.parentElement.title || anchor.textContent.trim();
         return { filename, mediaUrl: fileThumb.href };
       });
 
       const expectedExt = path.extname(new URL(mediaUrl).pathname).toLowerCase();
 
-      await page.getByRole('button', { name: 'Download' }).first().click();
+      const firstBtn = await driver.findElement(By.xpath(DOWNLOAD_BTN_XPATH));
+      await jsClick(driver, firstBtn);
 
-      await expect(
-        page.getByRole('button', { name: 'In progress...' }).first()
-      ).toBeVisible({ timeout: 10000 });
+      await driver.wait(
+        until.elementLocated(By.xpath('//button[normalize-space(text())="Done"]')),
+        110000
+      );
 
-      await expect(
-        page.getByRole('button', { name: 'Done' }).first()
-      ).toBeVisible({ timeout: 60000 });
-
-      await expect(
-        page.getByRole('button', { name: 'Download' }).first()
-      ).toBeDisabled();
+      const doneBtn = await driver.findElement(By.xpath('//button[normalize-space(text())="Done"]'));
+      expect(await doneBtn.isEnabled()).toBe(false);
 
       const files = fs.readdirSync(downloadsDir);
       expect(files.length).toBe(1);
@@ -63,17 +75,6 @@ for (const fixture of FIXTURES) {
       expect(path.basename(downloadedFile, path.extname(downloadedFile))).toMatch(
         new RegExp(`^${expectedBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)
       );
-    });
-
-    test('Download button is disabled and shows Done after download completes', async ({
-      page,
-    }) => {
-      const firstButton = page.getByRole('button', { name: 'Download' }).first();
-      await firstButton.click();
-      await expect(firstButton).toBeDisabled();
-      await expect(page.getByRole('button', { name: 'Done' }).first()).toBeVisible({
-        timeout: 60000,
-      });
     });
   });
 }
