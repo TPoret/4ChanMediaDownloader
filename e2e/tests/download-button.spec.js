@@ -76,5 +76,46 @@ for (const fixture of FIXTURES) {
         new RegExp(`^${expectedBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)
       );
     });
+
+    test('clicking Download on a truncated-name file uses the full title as filename', async ({
+      driver,
+      downloadsDir,
+      port,
+    }) => {
+      test.setTimeout(120000);
+
+      const result = await driver.executeScript(function () {
+        const thumbs = Array.from(document.querySelectorAll('.file > .fileThumb'));
+        for (const thumb of thumbs) {
+          const anchor = thumb.parentElement.querySelector('.fileText > a');
+          if (anchor && anchor.title && anchor.title !== anchor.textContent.trim()) {
+            return { fullTitle: anchor.title, mediaUrl: thumb.href };
+          }
+        }
+        return null;
+      });
+
+      test.skip(result === null, 'no truncated filenames in this fixture');
+
+      const { fullTitle, mediaUrl } = result;
+      const expectedExt = path.extname(new URL(mediaUrl).pathname).toLowerCase();
+
+      const btn = await driver.findElement(By.id(mediaUrl));
+      await jsClick(driver, btn);
+
+      await driver.wait(
+        until.elementLocated(By.xpath('//button[normalize-space(text())="Done"]')),
+        110000
+      );
+
+      const files = fs.readdirSync(downloadsDir);
+      expect(files.length).toBe(1);
+
+      const downloadedFile = files[0];
+      expect(path.extname(downloadedFile).toLowerCase()).toBe(expectedExt);
+      expect(path.basename(downloadedFile, path.extname(downloadedFile))).toBe(
+        path.basename(fullTitle, path.extname(fullTitle))
+      );
+    });
   });
 }
