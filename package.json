@@ -7,8 +7,9 @@
   "private": false,
   "scripts": {
     "build": "esbuild src/content_script.js --target=firefox57 --bundle --outfile=content.js && esbuild src/background_script.js --target=firefox57 --bundle --define:process.env.NODE_ENV=\\\"production\\\" --outfile=background.js",
+    "lint": "yarn package && addons-linter dist/$(ls dist/ | grep .zip | head -1)",
     "test:e2e": "yarn build && playwright test --config e2e/playwright.config.js",
-    "package": "yarn build && web-ext build",
+    "package": "yarn build && web-ext build --overwrite-dest",
     "release": "node scripts/release.js"
   },
   "jest": {
@@ -30,6 +31,7 @@
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "selenium-webdriver": "^4.45.0",
+    "addons-linter": "^10.7.0",
     "web-ext": "^10.4.0"
   },
   "dependencies": {
