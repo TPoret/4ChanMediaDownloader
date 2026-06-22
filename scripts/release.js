@@ -30,5 +30,9 @@ rl.question('New version (X.Y.Z): ', (version) => {
   execSync('git push', { stdio: 'inherit' });
   execSync('git push --tags', { stdio: 'inherit' });
 
+  execSync(`rm -f dist/4chanmediadownloader-${version}.zip`, { stdio: 'inherit' });
+  execSync('yarn package', { stdio: 'inherit' });
+  execSync(`gh release create v${version} dist/4chanmediadownloader-${version}.zip --title "v${version}" --generate-notes`, { stdio: 'inherit' });
+
   console.log(`Released v${version}`);
 });
