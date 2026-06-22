@@ -22,5 +22,6 @@ module.exports = {
     '*.cjs',
     'web-ext-config.cjs',
     'web-ext-config.mjs',
+    'scripts',
   ],
 };
