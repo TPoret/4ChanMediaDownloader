@@ -2,13 +2,14 @@
   "manifest_version": 2,
   "name": "4chanMediaDownloader",
   "description": "Add a download button for each media in a thread. Can bulk download all media at once.",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "browser_specific_settings": {
     "gecko": {
       "id": "{e5208388-1e55-49fb-91cf-f8b79c128f56}",
       "data_collection_permissions": {
-        "required": [],
-        "optional": []
+        "required": [
+          "none"
+        ]
       }
     }
   },
