@@ -6,7 +6,8 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "build": "esbuild src/content_script.js --target=firefox57 --bundle --outfile=content.js && esbuild src/background_script.js --target=firefox57 --bundle --outfile=background.js"
+    "build": "esbuild src/content_script.js --target=firefox57 --bundle --outfile=content.js && esbuild src/background_script.js --target=firefox57 --bundle --outfile=background.js",
+    "test:e2e": "yarn build && playwright test --config e2e/playwright.config.js"
   },
   "jest": {
     "transform": {
@@ -16,6 +17,7 @@
   "devDependencies": {
     "@babel/core": "^7.21.8",
     "@babel/preset-env": "^7.21.5",
+    "@playwright/test": "^1.45.0",
     "babel-jest": "^29.5.0",
     "esbuild": "^0.17.19",
     "jest": "^29.5.0",
