@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "4chanMediaDownloader",
   "description": "Add a download button for each media in a thread. Can bulk download all media at once.",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "browser_specific_settings": {
     "gecko": {
       "id": "4chan-media-downloader@tpt"
@@ -13,7 +13,9 @@
     "128": "icons/icon-128x128.png"
   },
   "background": {
-    "scripts": ["background.js"]
+    "scripts": [
+      "background.js"
+    ]
   },
   "content_scripts": [
     {
@@ -22,9 +24,14 @@
         "*://boards.4channel.org/*",
         "*://localhost/*"
       ],
-      "js": ["content.js"]
+      "js": [
+        "content.js"
+      ]
     }
   ],
-  "permissions": ["downloads", "downloads.open"],
+  "permissions": [
+    "downloads",
+    "downloads.open"
+  ],
   "content_security_policy": "default-src 'self'"
 }
