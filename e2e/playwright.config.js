@@ -4,9 +4,10 @@ module.exports = defineConfig({
   testDir: './tests',
   timeout: 60000,
   globalTimeout: 1800000,
-  // 2 workers: each spec file gets its own Firefox instance, keeping background
-  // script state isolated between download-button and download-all test suites.
-  workers: 2,
+  // 3 workers: each spec file gets its own Firefox instance, keeping background
+  // script DownloadStore state isolated across download-button, download-all,
+  // and download-by-extension test suites.
+  workers: 3,
   reporter: [['list']],
   use: { actionTimeout: 30000 },
 });
