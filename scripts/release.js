@@ -28,7 +28,7 @@ rl.question('New version (X.Y.Z): ', (version) => {
   execSync(`git commit -m "chore: bump version to ${version}"`, { stdio: 'inherit' });
   execSync(`git tag v${version}`, { stdio: 'inherit' });
   execSync('git push', { stdio: 'inherit' });
-  execSync('git push --tags', { stdio: 'inherit' });
+  execSync(`git push origin v${version}`, { stdio: 'inherit' });
 
   execSync(`rm -f dist/4chanmediadownloader-${version}.zip`, { stdio: 'inherit' });
   execSync('yarn package', { stdio: 'inherit' });
