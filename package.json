@@ -6,7 +6,7 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "build": "esbuild src/content_script.js --target=firefox57 --bundle --outfile=content.js && esbuild src/background_script.js --target=firefox57 --bundle --outfile=background.js",
+    "build": "esbuild src/content_script.js --target=firefox57 --bundle --outfile=content.js && esbuild src/background_script.js --target=firefox57 --bundle --define:process.env.NODE_ENV=\\\"production\\\" --outfile=background.js",
     "test:e2e": "yarn build && playwright test --config e2e/playwright.config.js",
     "package": "yarn build && web-ext build",
     "release": "node scripts/release.js"

@@ -5,7 +5,11 @@
   "version": "1.0.5",
   "browser_specific_settings": {
     "gecko": {
-      "id": "4chan-media-downloader@tpt"
+      "id": "{e5208388-1e55-49fb-91cf-f8b79c128f56}",
+      "data_collection_permissions": {
+        "required": [],
+        "optional": []
+      }
     }
   },
   "icons": {
