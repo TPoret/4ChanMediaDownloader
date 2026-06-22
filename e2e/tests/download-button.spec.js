@@ -38,6 +38,30 @@ for (const fixture of FIXTURES) {
       expect(downloadBtns.length).toBe(thumbCount);
     });
 
+    test('Download button is placed inside .fileText for every mp4 post', async ({ driver }) => {
+      // Regression: mp4 posts have Schema.org <meta> elements as the first children of
+      // .file, so using .firstChild to find the button target was wrong and threw an
+      // exception that terminated the forEach early, leaving mp4 (and all subsequent)
+      // posts without Download buttons.
+      const mp4Count = await driver.executeScript(function() {
+        return Array.from(document.querySelectorAll('.file > .fileThumb'))
+          .filter(function(ft) { return ft.href.toLowerCase().endsWith('.mp4'); })
+          .length;
+      });
+
+      test.skip(mp4Count === 0, 'no mp4 posts in this fixture');
+
+      const missingButtons = await driver.executeScript(function() {
+        return Array.from(document.querySelectorAll('.file > .fileThumb'))
+          .filter(function(ft) { return ft.href.toLowerCase().endsWith('.mp4'); })
+          .filter(function(ft) {
+            return ft.parentElement.querySelector('.fileText button') === null;
+          }).length;
+      });
+
+      expect(missingButtons).toBe(0);
+    });
+
     test('clicking Download downloads the file with correct name and extension', async ({
       driver,
       downloadsDir,
