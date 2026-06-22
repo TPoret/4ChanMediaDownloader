@@ -7,7 +7,8 @@
   "private": false,
   "scripts": {
     "build": "esbuild src/content_script.js --target=firefox57 --bundle --outfile=content.js && esbuild src/background_script.js --target=firefox57 --bundle --outfile=background.js",
-    "test:e2e": "yarn build && playwright test --config e2e/playwright.config.js"
+    "test:e2e": "yarn build && playwright test --config e2e/playwright.config.js",
+    "package": "yarn build && web-ext build --source-dir . --artifacts-dir dist --ignore-files 'src e2e node_modules docs test-results *.config.js yarn.lock package.json *.md *.png diag-* .git *.cjs *.properties'"
   },
   "jest": {
     "transform": {

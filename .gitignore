@@ -5,3 +5,4 @@ background.js
 e2e/downloads/
 __pycache__/
 docs/superpowers/
+dist/
