@@ -86,7 +86,11 @@ for (const fixture of FIXTURES) {
 
       const result = await driver.executeScript(function () {
         const thumbs = Array.from(document.querySelectorAll('.file > .fileThumb'));
-        for (const thumb of thumbs) {
+        // Start from index 1: the prior test already downloaded thumbs[0], and the
+        // background script deduplicates by URL within the Firefox session, so
+        // re-clicking thumbs[0]'s button would get stuck at "Pending..." forever.
+        for (let i = 1; i < thumbs.length; i++) {
+          const thumb = thumbs[i];
           const anchor = thumb.parentElement.querySelector('.fileText > a');
           if (anchor && anchor.title && anchor.title !== anchor.textContent.trim()) {
             return { fullTitle: anchor.title, mediaUrl: thumb.href };
