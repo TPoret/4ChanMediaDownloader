@@ -9,7 +9,7 @@ for (const fixture of FIXTURES) {
   test.describe(`${fixture} - Download All`, () => {
     test.beforeEach(async ({ page, downloadsDir }) => {
       for (const f of fs.readdirSync(downloadsDir)) {
-        fs.unlinkSync(path.join(downloadsDir, f));
+        fs.rmSync(path.join(downloadsDir, f), { recursive: true, force: true });
       }
       await page.goto(`http://localhost:${PORT}/${fixture}`);
       await page.waitForSelector('button:has-text("Download")', { timeout: 10000 });
@@ -32,7 +32,7 @@ for (const fixture of FIXTURES) {
       await page.waitForFunction(
         () => {
           const buttons = Array.from(document.querySelectorAll('.file button'));
-          return buttons.length > 0 && buttons.every((b) => b.textContent === 'Done');
+          return buttons.length > 0 && buttons.every((b) => b.textContent.trim() === 'Done');
         },
         { timeout: 120000 }
       );
@@ -56,7 +56,7 @@ for (const fixture of FIXTURES) {
       await page.waitForFunction(
         () => {
           const buttons = Array.from(document.querySelectorAll('.file button'));
-          return buttons.length > 0 && buttons.every((b) => b.textContent === 'Done');
+          return buttons.length > 0 && buttons.every((b) => b.textContent.trim() === 'Done');
         },
         { timeout: 120000 }
       );
@@ -92,7 +92,7 @@ for (const fixture of FIXTURES) {
       await page.waitForFunction(
         () => {
           const buttons = Array.from(document.querySelectorAll('.file button'));
-          return buttons.length > 0 && buttons.every((b) => b.textContent === 'Done');
+          return buttons.length > 0 && buttons.every((b) => b.textContent.trim() === 'Done');
         },
         { timeout: 120000 }
       );
@@ -120,7 +120,7 @@ for (const fixture of FIXTURES) {
       await page.waitForFunction(
         () => {
           const buttons = Array.from(document.querySelectorAll('.file button'));
-          return buttons.length > 0 && buttons.every((b) => b.textContent === 'Done');
+          return buttons.length > 0 && buttons.every((b) => b.textContent.trim() === 'Done');
         },
         { timeout: 120000 }
       );

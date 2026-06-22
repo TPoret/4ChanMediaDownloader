@@ -9,7 +9,7 @@ for (const fixture of FIXTURES) {
   test.describe(fixture, () => {
     test.beforeEach(async ({ page, downloadsDir }) => {
       for (const f of fs.readdirSync(downloadsDir)) {
-        fs.unlinkSync(path.join(downloadsDir, f));
+        fs.rmSync(path.join(downloadsDir, f), { recursive: true, force: true });
       }
       await page.goto(`http://localhost:${PORT}/${fixture}`);
       await page.waitForSelector('button:has-text("Download")', { timeout: 10000 });

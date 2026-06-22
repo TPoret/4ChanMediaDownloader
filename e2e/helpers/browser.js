@@ -30,6 +30,7 @@ async function createBrowserContext() {
       'xpinstall.signatures.required': false,
       'extensions.autoDisableScopes': 0,
       'extensions.enabledScopes': 15,
+      'extensions.startupScanPolicy': 0,
       'browser.download.folderList': 2,
       'browser.download.dir': DOWNLOADS_DIR,
       'browser.download.useDownloadDir': true,
@@ -41,8 +42,11 @@ async function createBrowserContext() {
   });
 
   async function cleanup() {
-    await context.close();
-    fs.rmSync(profileDir, { recursive: true, force: true });
+    try {
+      await context.close();
+    } finally {
+      fs.rmSync(profileDir, { recursive: true, force: true });
+    }
   }
 
   return { context, cleanup };
