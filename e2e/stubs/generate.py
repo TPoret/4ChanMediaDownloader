@@ -23,6 +23,6 @@ def gst(pipeline, out):
     subprocess.run(cmd, shell=True, check=True)
 
 gst('videotestsrc num-buffers=1 ! videoconvert ! vp8enc ! webmmux', stub('stub.webm'))
-gst('videotestsrc num-buffers=1 ! videoconvert ! x264enc ! mp4mux', stub('stub.mp4'))
+gst('videotestsrc num-buffers=1 ! videoconvert ! x264enc ! mp4mux', stub('stub.mp4'))  # mp4mux places moov after mdat; fine for download tests, not for streaming playback
 
 print(f'Stubs written to {OUT}/')

@@ -3,3 +3,4 @@ node_modules
 content.js
 background.js
 e2e/downloads/
+__pycache__/

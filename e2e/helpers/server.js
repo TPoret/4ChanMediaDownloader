@@ -47,7 +47,7 @@ function startServer() {
           res.end('Not found');
           return;
         }
-        const port = server.address().port;
+        const port = server.port;
         const rewritten = data.replace(/\/\/i\.4cdn\.org/g, `http://localhost:${port}`);
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(rewritten);
