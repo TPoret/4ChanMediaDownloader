@@ -117,5 +117,45 @@ for (const fixture of FIXTURES) {
         path.basename(fullTitle, path.extname(fullTitle))
       );
     });
+
+    test('clicking Download on a spoiler image uses the real filename, not "Spoiler Image"', async ({
+      driver,
+      downloadsDir,
+    }) => {
+      test.setTimeout(120000);
+
+      const result = await driver.executeScript(function () {
+        const thumbs = Array.from(document.querySelectorAll('.file > .fileThumb.imgspoiler'));
+        for (const thumb of thumbs) {
+          const fileText = thumb.parentElement.querySelector('.fileText');
+          const realFilename = fileText && fileText.title;
+          if (realFilename) {
+            return { realFilename, mediaUrl: thumb.href };
+          }
+        }
+        return null;
+      });
+
+      test.skip(result === null, 'no spoiler images in this fixture');
+
+      const { realFilename, mediaUrl } = result;
+      const expectedExt = path.extname(new URL(mediaUrl).pathname).toLowerCase();
+      const expectedBase = path.basename(realFilename, path.extname(realFilename));
+
+      const btn = await driver.findElement(By.id(mediaUrl));
+      await jsClick(driver, btn);
+
+      await driver.wait(
+        until.elementLocated(By.xpath('//button[normalize-space(text())="Done"]')),
+        110000
+      );
+
+      const files = fs.readdirSync(downloadsDir);
+      expect(files.length).toBe(1);
+
+      const downloadedFile = files[0];
+      expect(path.extname(downloadedFile).toLowerCase()).toBe(expectedExt);
+      expect(path.basename(downloadedFile, path.extname(downloadedFile))).toBe(expectedBase);
+    });
   });
 }
