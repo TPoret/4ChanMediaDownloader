@@ -76,7 +76,7 @@ for (const fixture of FIXTURES) {
     const downloadedFiles = fs.readdirSync(downloadsDir);
 
     expect(total).toBe(expectedCount);
-    expect(downloadedFiles.length).toBeGreaterThan(0);
+    expect(done).toBe(total);
     expect(downloadedFiles.length).toBe(done);
 
     for (const ext of downloadedFiles.map((f) => path.extname(f).replace('.', '').toLowerCase())) {

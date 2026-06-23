@@ -24,6 +24,27 @@ const MP4_POST_HTML =
   '<a class="fileThumb" href="//i.4cdn.org/wsg/456.mp4" target="_blank"><img src="//i.4cdn.org/wsg/456s.jpg"></a>' +
   '</div>';
 
+// Post where the anchor has no title attribute and the display text is just ".mp4" (original file
+// had an empty basename). resolveFilename should fall back to the CDN URL basename.
+const EMPTY_BASENAME_POST_HTML =
+  '<div class="file">' +
+  '<div class="fileText"><a href="//i.4cdn.org/wsg/1779800852585858.mp4" target="_blank">.mp4</a></div>' +
+  '<a class="fileThumb" href="//i.4cdn.org/wsg/1779800852585858.mp4" target="_blank"><img src="//i.4cdn.org/wsg/1779800852585858s.jpg"></a>' +
+  '</div>';
+
+// webm post with a truncated display name and HTML entities in the title attribute.
+// The anchor text shown to the user is shortened ("doesn&#039;t" → displayed as
+// "UN Security Council veto (...)"), but the full filename is in the title attribute.
+// Exercises the bug where sanitizing the title after HTML-decoding would corrupt the
+// apostrophe (&#039; → ' → &amp; roundtrip) and break the download.
+const WEBM_POST_WITH_ENTITY_IN_TITLE_HTML =
+  '<div class="file" itemprop="video" itemscope itemtype="https://schema.org/VideoObject">' +
+  '<meta itemprop="name" content="UN Security Council veto power of USA for israel. To veto anything that israel doesn&#039;t want to pass.webm">' +
+  '<link itemprop="contentUrl" href="//i.4cdn.org/wsg/789.webm">' +
+  '<div class="fileText"><a title="UN Security Council veto power of USA for israel. To veto anything that israel doesn\'t want to pass.webm" href="//i.4cdn.org/wsg/789.webm" target="_blank">UN Security Council veto (...).webm</a></div>' +
+  '<a class="fileThumb" href="//i.4cdn.org/wsg/789.webm" target="_blank"><img src="//i.4cdn.org/wsg/789s.jpg"></a>' +
+  '</div>';
+
 describe("addDownloadButtons", () => {
   afterEach(() => {
     document.body.innerHTML = "";
@@ -78,6 +99,30 @@ describe("addDownloadButtons", () => {
 
     expect(calls.length).toBe(1);
     expect(calls[0].filename).toBe("original.mp4");
+  });
+
+  it("falls back to URL basename when anchor text produces an empty filename basename", () => {
+    document.body.innerHTML = EMPTY_BASENAME_POST_HTML;
+    const calls = [];
+    addDownloadButtons((url, filename) => calls.push({ url, filename }));
+
+    document.querySelector(".fileText button").click();
+
+    expect(calls.length).toBe(1);
+    expect(calls[0].filename).toBe("1779800852585858.mp4");
+  });
+
+  it("uses the full title attribute as filename, not the truncated display text", () => {
+    document.body.innerHTML = WEBM_POST_WITH_ENTITY_IN_TITLE_HTML;
+    const calls = [];
+    addDownloadButtons((url, filename) => calls.push({ url, filename }));
+
+    document.querySelector(".fileText button").click();
+
+    expect(calls.length).toBe(1);
+    expect(calls[0].filename).toBe(
+      "UN Security Council veto power of USA for israel. To veto anything that israel doesn't want to pass.webm"
+    );
   });
 });
 

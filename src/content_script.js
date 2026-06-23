@@ -39,12 +39,20 @@ channel.onMessage.addListener(function (message) {
   messageHandler[message.event](message);
 });
 
+function resolveFilename(href, element) {
+  const raw = element.title || element.parentElement.title || element.textContent;
+  const lastDot = raw.lastIndexOf('.');
+  const basename = lastDot > 0 ? raw.slice(0, lastDot) : (lastDot === 0 ? '' : raw);
+  if (!basename.trim()) {
+    try { return decodeURIComponent(new URL(href).pathname.split('/').pop()); } catch (_) {}
+  }
+  return raw;
+}
+
 function downloadAll() {
   document.querySelectorAll(".file > .fileThumb").forEach((fileThumb) => {
     const element = fileThumb.parentElement.querySelector(".fileText > a");
-    const filename = element.title || element.parentElement.title || element.textContent;
-
-    initiateDownload(fileThumb.href, filename);
+    initiateDownload(fileThumb.href, resolveFilename(fileThumb.href, element));
   });
 }
 
